@@ -1,7 +1,7 @@
 program detect_rotation;
 
 uses
-  ctypes, xlib, x, xrandr, unixtype;
+  ctypes, xlib, x, xrandr, unixtype, sysutils;
 
 type
   PXRRScreenChangeNotifyEvent = ^TXRRScreenChangeNotifyEvent;
@@ -30,6 +30,7 @@ var
   eventBase, errorBase: cint;
   event: TXEvent;
   xrrEvent: PXRRScreenChangeNotifyEvent;
+  eventCount: integer;
 
 begin
   display := XOpenDisplay(nil);
@@ -49,20 +50,25 @@ begin
   rootWindow := XRootWindow(display, XDefaultScreen(display));
   XRRSelectInput(display, rootWindow, RRScreenChangeNotifyMask);
 
+  eventCount := 0;
+
   while True do
   begin
     XNextEvent(display, @event);
     if event._type = eventBase + RRScreenChangeNotify then
     begin
-      xrrEvent := PXRRScreenChangeNotifyEvent(@event);
-      WriteLn('Screen change detected:');
-      WriteLn('  Rotation: ', xrrEvent^.rotation);
-      WriteLn('  Size: ', xrrEvent^.width, 'x', xrrEvent^.height);
+      Inc(eventCount);
+      if (eventCount mod 3) = 0 then
+      begin
+        xrrEvent := PXRRScreenChangeNotifyEvent(@event);
+        WriteLn('Screen change detected:');
+        WriteLn('  Rotation: ', xrrEvent^.rotation);
+        WriteLn('  Size: ', xrrEvent^.width, 'x', xrrEvent^.height);
 
-      // Redraw your application UI here based on the new size and rotation
+        // redraw the application UI here based on the new size and rotation
+      end;
     end;
   end;
 
   XCloseDisplay(display);
 end.
-
